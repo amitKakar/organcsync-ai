@@ -1,0 +1,264 @@
+# OrganSync AI Scoring Service Configuration
+spring:
+  application:
+    name: organsync-ai-scoring
+
+  # MongoDB Configuration
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/organsync_ai_scoring
+      database: organsync_ai_scoring
+      auto-index-creation: true
+
+  # Redis Configuration
+  redis:
+    host: localhost
+    port: 6379
+    timeout: 2000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+        max-wait: -1ms
+
+  # Kafka Configuration
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: ai-scoring-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+        spring.json.type.mapping: "donorPair:com.organsync.aiscoring.dto.ScoringRequestDto"
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    listener:
+      ack-mode: record
+      concurrency: 3
+      poll-timeout: 3000ms
+      missing-topics-fatal: false
+
+  # Security Configuration
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/auth/realms/organsync
+          jwk-set-uri: http://localhost:8080/auth/realms/organsync/protocol/openid-connect/certs
+
+# Server Configuration
+server:
+  port: 8086
+  servlet:
+    context-path: /ai-scoring
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain
+
+# Management/Actuator Configuration
+management:
+  server:
+    port: 8086
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    tags:
+      application: ${spring.application.name}
+      service: ai-scoring
+
+# Logging Configuration
+logging:
+  level:
+    com.organsync: DEBUG
+    org.springframework.kafka: INFO
+    org.springframework.data.mongodb: INFO
+    org.apache.kafka: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/ai-scoring-service.log
+    max-size: 100MB
+    max-history: 30
+
+# AI Scoring Service Configuration
+ai-scoring:
+  # Algorithm Configuration
+  algorithms:
+    cox-regression:
+      enabled: true
+      model-version: "1.0.0"
+      confidence-threshold: 0.7
+      feature-importance-threshold: 0.05
+    mcda:
+      enabled: true
+      method: "TOPSIS"
+      criteria-weights:
+        blood-type: 0.25
+        hla-compatibility: 0.30
+        age-compatibility: 0.15
+        geographic-proximity: 0.10
+        medical-history: 0.10
+        urgency: 0.10
+
+  # Scoring Configuration
+  scoring:
+    default-method: "HYBRID"
+    cache-enabled: true
+    cache-ttl: 3600 # 1 hour in seconds
+    batch-size: 100
+    parallel-processing: true
+    max-concurrent-requests: 10
+
+  # Event Processing Configuration
+  events:
+    auto-scoring-enabled: true
+    retry-attempts: 3
+    retry-delay: 5000 # 5 seconds
+    dead-letter-topic: "ai-scoring.dlq"
+
+  # Performance Configuration
+  performance:
+    max-processing-time-ms: 5000
+    monitoring-enabled: true
+    alerts-enabled: true
+    slow-query-threshold-ms: 1000
+
+# OpenAPI/Swagger Configuration
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    operationsSorter: method
+    disable-swagger-default-url: true
+  info:
+    title: OrganSync AI Scoring Service API
+    description: AI-powered compatibility scoring for kidney exchange matching
+    version: 1.0.0
+    contact:
+      name: OrganSync Development Team
+      email: dev@organsync.com
+    license:
+      name: Apache 2.0
+      url: http://www.apache.org/licenses/LICENSE-2.0.html
+
+---
+# Development Profile
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/organsync_ai_scoring_dev
+
+  kafka:
+    bootstrap-servers: localhost:9092
+
+  redis:
+    host: localhost
+    port: 6379
+
+logging:
+  level:
+    com.organsync: DEBUG
+    org.springframework.kafka: DEBUG
+
+ai-scoring:
+  scoring:
+    cache-enabled: false
+  events:
+    auto-scoring-enabled: true
+  performance:
+    monitoring-enabled: true
+
+---
+# Docker Profile
+spring:
+  config:
+    activate:
+      on-profile: docker
+
+  data:
+    mongodb:
+      uri: mongodb://mongodb:27017/organsync_ai_scoring
+
+  kafka:
+    bootstrap-servers: kafka:9092
+
+  redis:
+    host: redis
+    port: 6379
+
+server:
+  port: 8086
+
+logging:
+  level:
+    com.organsync: INFO
+
+---
+# Production Profile
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://mongodb:27017/organsync_ai_scoring}
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
+    security:
+      protocol: SASL_SSL
+    sasl:
+      mechanism: PLAIN
+      jaas:
+        config: org.apache.kafka.common.security.plain.PlainLoginModule required username="${KAFKA_USERNAME}" password="${KAFKA_PASSWORD}";
+
+  redis:
+    host: ${REDIS_HOST:redis}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
+
+server:
+  port: 8086
+
+logging:
+  level:
+    com.organsync: INFO
+    org.springframework.kafka: WARN
+  file:
+    name: /var/log/ai-scoring-service.log
+
+ai-scoring:
+  scoring:
+    cache-enabled: true
+    cache-ttl: 7200 # 2 hours in production
+  events:
+    auto-scoring-enabled: true
+  performance:
+    monitoring-enabled: true
+    alerts-enabled: true

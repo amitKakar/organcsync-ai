@@ -1,0 +1,35 @@
+[
+  {
+    "donorPairId": "550e8400-e29b-41d4-a716-446655440000",
+    "recipientPairId": "550e8400-e29b-41d4-a716-446655440001",
+    "donorBloodType": "A+",
+    "donorAge": 35,
+    "recipientBloodType": "B+",
+    "recipientAge": 42,
+    "hlaMismatches": 2,
+    "urgencyLevel": "HIGH",
+    "calculationMethod": "HYBRID"
+  },
+  {
+    "donorPairId": "550e8400-e29b-41d4-a716-446655440002",
+    "recipientPairId": "550e8400-e29b-41d4-a716-446655440003",
+    "donorBloodType": "O-",
+    "donorAge": 28,
+    "recipientBloodType": "A+",
+    "recipientAge": 35,
+    "hlaMismatches": 1,
+    "urgencyLevel": "MODERATE",
+    "calculationMethod": "COX"
+  },
+  {
+    "donorPairId": "550e8400-e29b-41d4-a716-446655440004",
+    "recipientPairId": "550e8400-e29b-41d4-a716-446655440005",
+    "donorBloodType": "AB+",
+    "donorAge": 45,
+    "recipientBloodType": "O+",
+    "recipientAge": 38,
+    "hlaMismatches": 4,
+    "urgencyLevel": "LOW",
+    "calculationMethod": "MCDA"
+  }
+]
